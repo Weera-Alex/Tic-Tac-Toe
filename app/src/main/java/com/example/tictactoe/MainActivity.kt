@@ -71,22 +71,25 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private const val DRAW = "Draw"
+private const val EMPTY_CELL = "_"
+
 class MyViewModel : ViewModel() {
     private val _board: Array<Array<MutableLiveData<String>>> = Array(3) {
-        Array(3) { MutableLiveData("_") }
+        Array(3) { MutableLiveData(EMPTY_CELL) }
     }
 
     val board: Array<Array<MutableLiveData<String>>>
         get() = _board
 
-    var isXturn by mutableStateOf(true)
 
+    var currentPlayer: Player = Player.X
     var gameStatus by mutableStateOf("")
 
     // Update the value at a specific position in the 2D array
     fun updateValue(row: Int, column: Int, newValue: String) {
         _board[row][column].value = newValue
-        isXturn = !isXturn
+        currentPlayer = if (currentPlayer == Player.X) Player.O else Player.X
         val winner = gameState(_board)
         if (winner != null) {
             gameStatus = winner
@@ -97,10 +100,10 @@ class MyViewModel : ViewModel() {
     fun resetGame() {
         _board.forEach { row ->
             row.forEach { cell ->
-                cell.value = "_"
+                cell.value = EMPTY_CELL
             }
         }
-        isXturn = true
+        currentPlayer = Player.X
         gameStatus = ""
     }
 }
@@ -158,9 +161,9 @@ fun Cell(size: Dp, color: Color, onClick: () -> Unit, board: Array<Array<Mutable
             shape = RectangleShape,
             color = color
         ) {
-            if (board[x][y].value == "X") {
+            if (board[x][y].value == Player.X.symbol) {
                 AnimatedX()
-            } else if (board[x][y].value == "O") {
+            } else if (board[x][y].value == Player.O.symbol) {
                 AnimatedO()
             }
         }
@@ -171,7 +174,7 @@ fun Cell(size: Dp, color: Color, onClick: () -> Unit, board: Array<Array<Mutable
 fun GameBoard(navController: NavHostController, viewModel: MyViewModel) {
 
     val board = viewModel.board
-    var isXturn = viewModel.isXturn
+    var isXturn = viewModel.currentPlayer.symbol == Player.X.symbol
     var gameStatus = viewModel.gameStatus
 
     Column(
@@ -201,11 +204,11 @@ fun GameBoard(navController: NavHostController, viewModel: MyViewModel) {
                         size = 100.dp,
                         color = Color.White,
                         onClick = {
-                            if (board[x][y].value == "_" && gameStatus == "") {
+                            if (board[x][y].value == EMPTY_CELL && gameStatus == "") {
                                 if (isXturn) {
-                                    viewModel.updateValue(x, y, "X")
+                                    viewModel.updateValue(x, y, Player.X.symbol)
                                 } else {
-                                    viewModel.updateValue(x, y, "O")
+                                    viewModel.updateValue(x, y, Player.O.symbol)
                                 }
                                 isXturn = !isXturn
                                 val winner = gameState(board)
@@ -249,30 +252,31 @@ fun GameBoard(navController: NavHostController, viewModel: MyViewModel) {
 private fun gameState(board: Array<Array<MutableLiveData<String>>>): String? {
     // Check rows
     for (row in board) {
-        if (row.all { it.value == "X" }) return "X"
-        if (row.all { it.value == "O" }) return "O"
+        if (row.all { it.value == Player.X.symbol }) return Player.X.symbol
+        if (row.all { it.value == Player.O.symbol }) return Player.O.symbol
     }
 
     // Check columns
     for (col in board.indices) {
-        if (board.all { it[col].value == "X" }) return "X"
-        if (board.all { it[col].value == "O" }) return "O"
+        if (board.all { it[col].value == Player.X.symbol }) return Player.X.symbol
+        if (board.all { it[col].value == Player.O.symbol }) return Player.O.symbol
     }
 
     // Check diagonals
     if (board[0][0].value == board[1][1].value && board[1][1].value == board[2][2].value) {
-        if (board[0][0].value == "X") return "X"
-        if (board[0][0].value == "O") return "O"
+        if (board[0][0].value == Player.X.symbol) return Player.X.symbol
+        if (board[0][0].value == Player.O.symbol) return Player.O.symbol
     }
     if (board[0][2].value == board[1][1].value && board[1][1].value == board[2][0].value) {
-        if (board[0][2].value == "X") return "X"
-        if (board[0][2].value == "O") return "O"
+        if (board[0][2].value == Player.X.symbol) return Player.X.symbol
+        if (board[0][2].value == Player.O.symbol) return Player.O.symbol
     }
-    if (board.all { row -> row.all { it.value != "_" } }) {
-        return "Draw"
+    if (board.all { row -> row.all { it.value != EMPTY_CELL } }) {
+        return DRAW
     }
     return null // No winner found
 }
+
 
 @Composable
 fun AnimatedX() {
@@ -297,14 +301,14 @@ fun AnimatedX() {
         val endY = startY + lineLength
 
         drawLine(
-            color = Color.Red,
+            color = Color.Black,
             start = Offset(startX, startY),
             end = Offset(endX, endY),
             strokeWidth = 4f
         )
 
         drawLine(
-            color = Color.Red,
+            color = Color.Black,
             start = Offset(endX, startY),
             end = Offset(startX, endY),
             strokeWidth = 4f
@@ -333,7 +337,7 @@ fun AnimatedO() {
         val radius = min(canvasWidth, canvasHeight) / 4 * animatedProgress.value
 
         drawCircle(
-            color = Color.Blue,
+            color = Color.Black,
             radius = radius,
             center = Offset(centerX, centerY),
             style = Stroke(width = 2.dp.toPx())
