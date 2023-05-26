@@ -82,14 +82,13 @@ class MyViewModel : ViewModel() {
     val board: Array<Array<MutableLiveData<String>>>
         get() = _board
 
-
-    var currentPlayer: Player = Player.X
+    var currentPlayer by mutableStateOf(Player.X.symbol)
     var gameStatus by mutableStateOf("")
 
     // Update the value at a specific position in the 2D array
     fun updateValue(row: Int, column: Int, newValue: String) {
         _board[row][column].value = newValue
-        currentPlayer = if (currentPlayer == Player.X) Player.O else Player.X
+        currentPlayer = if (currentPlayer == Player.X.symbol) Player.O.symbol else Player.X.symbol
         val winner = gameState(_board)
         if (winner != null) {
             gameStatus = winner
@@ -103,7 +102,7 @@ class MyViewModel : ViewModel() {
                 cell.value = EMPTY_CELL
             }
         }
-        currentPlayer = Player.X
+        currentPlayer = Player.X.symbol
         gameStatus = ""
     }
 }
@@ -143,7 +142,7 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun Cell(size: Dp, color: Color, onClick: () -> Unit, board: Array<Array<MutableLiveData<String>>>, x: Int, y: Int, ) {
+fun Cell(size: Dp, color: Color, onClick: () -> Unit, board: Array<Array<MutableLiveData<String>>>, x: Int, y: Int ) {
     Box(
         modifier = Modifier
             .size(size)
@@ -174,7 +173,7 @@ fun Cell(size: Dp, color: Color, onClick: () -> Unit, board: Array<Array<Mutable
 fun GameBoard(navController: NavHostController, viewModel: MyViewModel) {
 
     val board = viewModel.board
-    var isXturn = viewModel.currentPlayer.symbol == Player.X.symbol
+    var isXturn = viewModel.currentPlayer == Player.X.symbol
     var gameStatus = viewModel.gameStatus
 
     Column(
